@@ -24,7 +24,7 @@ fn main() {
         .expect("Unable to generate bindings");
 
     // 指定输出文件的路径为 src/hw_dcmi_sys.rs
-    let out_path = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("src/hw_dcmi_sys.rs");
+    let out_path = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("gen/hw_dcmi_interface.rs");
 
     // Write the bindings to the specified file.
     bindings
