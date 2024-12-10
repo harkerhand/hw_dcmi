@@ -3,6 +3,7 @@
 use hw_dcmi_sys::bindings as ffi;
 use static_assertions::assert_impl_all;
 use crate::device::Card;
+use crate::enums::HealthState;
 use crate::error::{dcmi_try, DCMIResult};
 
 pub mod error;
@@ -144,5 +145,29 @@ impl DCMI {
         call_dcmi_function!(dcmi_get_card_list, self.lib, &mut card_num, card_list.as_mut_ptr(), len);
 
         Ok(card_list.into_iter().take(card_num as usize).map(|id| Card{dcmi: &self, id: id as u32}).collect())
+    }
+    
+    /// Query the driver health
+    /// 
+    /// # Returns
+    /// driver health
+    pub fn get_driver_health(&self) -> DCMIResult<HealthState> {
+        let mut health = 0u32;
+        call_dcmi_function!(dcmi_get_driver_health, self.lib, &mut health);
+        
+        Ok(health.into())
+    }
+    
+    /// Query the driver error code
+    /// 
+    /// # Returns
+    /// driver error code list
+    pub fn get_driver_error_code(&self) -> DCMIResult<Vec<u32>> {
+        let mut error_code_list = [0u32, 128];
+        let mut error_count = 0i32;
+        
+        call_dcmi_function!(dcmi_get_driver_errorcode, self.lib, &mut error_count, error_code_list.as_mut_ptr(), 128);
+        
+        Ok(error_code_list.into_iter().take(error_count as usize).collect())
     }
 }

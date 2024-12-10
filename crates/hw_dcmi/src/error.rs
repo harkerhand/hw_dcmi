@@ -2,9 +2,20 @@ use std::ffi::c_int;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
+pub enum GetDataError {
+    #[error("Invalid data")]
+    InvalidData,
+    #[error("Data read error")]
+    ReadError,
+}
+
+#[derive(Error, Debug)]
 pub enum DCMIError {
-    #[error("could not interpret string as utf-8")]
+    #[error(transparent)]
     Utf8Error(#[from] std::str::Utf8Error),
+
+    #[error(transparent)]
+    GetDataError(#[from] GetDataError),
     
     /// Invalid parameter
     #[error("Invalid parameter")]
@@ -111,4 +122,15 @@ pub fn dcmi_try(code: c_int) -> Result<(), DCMIError> {
         ffi::DCMI_ERR_CODE_NOT_SUPPORT => Err(DCMIError::NotSupport),
         _ => Err(DCMIError::UnknownError(code.into())),
     }
+}
+
+#[macro_export]
+macro_rules! check_value {
+    ($value:expr) => {
+        match $value {
+            0x7ffd => Err(GetDataError::InvalidData),
+            0x7fff => Err(GetDataError::ReadError),
+            _ => Ok($value),
+        }
+    };
 }
