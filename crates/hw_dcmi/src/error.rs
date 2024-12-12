@@ -16,7 +16,7 @@ pub enum DCMIError {
 
     #[error(transparent)]
     GetDataError(#[from] GetDataError),
-    
+
     /// Invalid parameter
     #[error("Invalid parameter")]
     InvalidParameter,
@@ -88,7 +88,7 @@ pub enum DCMIError {
     /// Device id / function not support
     #[error("Device id / function not support")]
     NotSupport,
-    
+
     /// Unknown error
     #[error("Unknown error, error code: {0}")]
     UnknownError(i32),
@@ -99,7 +99,7 @@ pub type DCMIResult<T> = Result<T, DCMIError>;
 /// Converts DCMI error code into a `Result<(), DCMIError>`.
 pub fn dcmi_try(code: c_int) -> Result<(), DCMIError> {
     use super::ffi;
-    
+
     match code {
         0 => Ok(()),
         ffi::DCMI_ERR_CODE_INVALID_PARAMETER => Err(DCMIError::InvalidParameter),

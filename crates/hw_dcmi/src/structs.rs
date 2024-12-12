@@ -1,8 +1,8 @@
 //! Wrapped structs for the DCMI peripheral
 
-use std::ffi::CStr;
 #[cfg(feature = "serde")]
 use serde_derive::{Deserialize, Serialize};
+use std::ffi::CStr;
 
 use hw_dcmi_sys::bindings as ffi;
 
@@ -17,16 +17,28 @@ pub struct ChipInfo {
     /// Chip version
     pub chip_version: String,
     /// Chip AI core count, for MCU and CPU, this field makes no sense
-    pub ai_core_count: u32
+    pub ai_core_count: u32,
 }
 
 impl From<ffi::dcmi_chip_info> for ChipInfo {
     fn from(chip_info: ffi::dcmi_chip_info) -> Self {
         ChipInfo {
-            chip_type: CStr::from_bytes_until_nul(&chip_info.chip_type).unwrap().to_str().unwrap().into(),
-            chip_name: CStr::from_bytes_until_nul(&chip_info.chip_name).unwrap().to_str().unwrap().into(),
-            chip_version: CStr::from_bytes_until_nul(&chip_info.chip_ver).unwrap().to_str().unwrap().into(),
-            ai_core_count: chip_info.aicore_cnt as u32
+            chip_type: CStr::from_bytes_until_nul(&chip_info.chip_type)
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .into(),
+            chip_name: CStr::from_bytes_until_nul(&chip_info.chip_name)
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .into(),
+            chip_version: CStr::from_bytes_until_nul(&chip_info.chip_ver)
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .into(),
+            ai_core_count: chip_info.aicore_cnt as u32,
         }
     }
 }
@@ -92,10 +104,10 @@ impl From<ffi::dcmi_pcie_info_all> for DomainPCIEInfo {
 }
 
 /// Board information
-/// 
+///
 /// # Notes
 /// when chip is NPU, only board_id and slot_id is valid, slot_id tagged the pcie slot where chip is located
-/// 
+///
 /// when chip is MCU, all fields are valid, slot_id tagged the position of card where chip is located
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -139,23 +151,39 @@ pub struct ELabelInfo {
 impl From<ffi::dcmi_elabel_info> for ELabelInfo {
     fn from(elabel_info: ffi::dcmi_elabel_info) -> Self {
         ELabelInfo {
-            product_name: CStr::from_bytes_until_nul(&elabel_info.product_name.map(|x| x as u8)).unwrap().to_str().unwrap().into(),
-            model: CStr::from_bytes_until_nul(&elabel_info.model.map(|x| x as u8)).unwrap().to_str().unwrap().into(),
-            manufacturer: CStr::from_bytes_until_nul(&elabel_info.manufacturer.map(|x| x as u8)).unwrap().to_str().unwrap().into(),
-            serial_number: CStr::from_bytes_until_nul(&elabel_info.serial_number.map(|x| x as u8)).unwrap().to_str().unwrap().into(),
+            product_name: CStr::from_bytes_until_nul(&elabel_info.product_name.map(|x| x as u8))
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .into(),
+            model: CStr::from_bytes_until_nul(&elabel_info.model.map(|x| x as u8))
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .into(),
+            manufacturer: CStr::from_bytes_until_nul(&elabel_info.manufacturer.map(|x| x as u8))
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .into(),
+            serial_number: CStr::from_bytes_until_nul(&elabel_info.serial_number.map(|x| x as u8))
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .into(),
         }
     }
 }
 
 /// Die ID
 pub struct DieInfo {
-    pub soc_die: [u32; ffi::DIE_ID_COUNT as usize]
+    pub soc_die: [u32; ffi::DIE_ID_COUNT as usize],
 }
 
 impl From<ffi::dcmi_die_id> for DieInfo {
     fn from(die_id: ffi::dcmi_die_id) -> Self {
         DieInfo {
-            soc_die: die_id.soc_die
+            soc_die: die_id.soc_die,
         }
     }
 }
@@ -326,16 +354,25 @@ pub struct ChipPCIEErrorRate {
 impl From<ffi::dcmi_chip_pcie_err_rate> for ChipPCIEErrorRate {
     fn from(chip_pcie_err_rate: ffi::dcmi_chip_pcie_err_rate) -> Self {
         ChipPCIEErrorRate {
-            deskew_fifo_overflow_intr_status: chip_pcie_err_rate.reg_deskew_fifo_overflow_intr_status != 0,
+            deskew_fifo_overflow_intr_status: chip_pcie_err_rate
+                .reg_deskew_fifo_overflow_intr_status
+                != 0,
             symbol_unlock_intr_status: chip_pcie_err_rate.reg_symbol_unlock_intr_status != 0,
             deskew_unlock_intr_status: chip_pcie_err_rate.reg_deskew_unlock_intr_status != 0,
-            phystatus_timeout_intr_status: chip_pcie_err_rate.reg_phystatus_timeout_intr_status != 0,
+            phystatus_timeout_intr_status: chip_pcie_err_rate.reg_phystatus_timeout_intr_status
+                != 0,
             symbol_unlock_counter: chip_pcie_err_rate.symbol_unlock_counter,
             pcs_rx_err_cnt: chip_pcie_err_rate.pcs_rx_err_cnt,
             phy_lane_err_counter: chip_pcie_err_rate.phy_lane_err_counter,
-            pcs_rcv_err_status: (0..32usize).map(|i| chip_pcie_err_rate.pcs_rcv_err_status & (1 << i) != 0).collect(),
-            symbol_unlock_err_status: (0..32usize).map(|i| chip_pcie_err_rate.symbol_unlock_err_status & (1 << i) != 0).collect(),
-            phy_lane_err_status: (0..32usize).map(|i| chip_pcie_err_rate.phy_lane_err_status & (1 << i) != 0).collect(),
+            pcs_rcv_err_status: (0..32usize)
+                .map(|i| chip_pcie_err_rate.pcs_rcv_err_status & (1 << i) != 0)
+                .collect(),
+            symbol_unlock_err_status: (0..32usize)
+                .map(|i| chip_pcie_err_rate.symbol_unlock_err_status & (1 << i) != 0)
+                .collect(),
+            phy_lane_err_status: (0..32usize)
+                .map(|i| chip_pcie_err_rate.phy_lane_err_status & (1 << i) != 0)
+                .collect(),
             dl_lcrc_err_num: chip_pcie_err_rate.dl_lcrc_err_num,
             dl_dcrc_err_num: chip_pcie_err_rate.dl_dcrc_err_num,
         }
@@ -372,6 +409,67 @@ impl From<ffi::dcmi_ecc_info> for ECCInfo {
             total_double_bit_error_cnt: ecc_info.total_double_bit_error_cnt,
             single_bit_isolated_pages_cnt: ecc_info.single_bit_isolated_pages_cnt,
             double_bit_isolated_pages_cnt: ecc_info.double_bit_isolated_pages_cnt,
+        }
+    }
+}
+
+/// VChip resource
+#[derive(Debug, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct VChipRes {
+    pub vchip_id: u32,
+    pub vfg_id: u32,
+    pub template_name: String,
+    pub reserved: String,
+}
+
+impl From<&VChipRes> for ffi::dcmi_create_vdev_res_stru {
+    fn from(vchip_res: &VChipRes) -> Self {
+        let mut template_name = [0 as std::os::raw::c_char; 32];
+        let mut reserved = [0 as std::os::raw::c_uchar; 64];
+        let template_bytes = vchip_res.template_name.as_bytes();
+        for (i, &byte) in template_bytes.iter().take(32).enumerate() {
+            template_name[i] = byte as std::os::raw::c_char;
+        }
+        let reserved_bytes = vchip_res.reserved.as_bytes();
+        for (i, &byte) in reserved_bytes.iter().take(64).enumerate() {
+            reserved[i] = byte as std::os::raw::c_uchar;
+        }
+
+        ffi::dcmi_create_vdev_res_stru {
+            vdev_id: vchip_res.vchip_id,
+            vfg_id: vchip_res.vfg_id,
+            template_name,
+            reserved,
+        }
+    }
+}
+
+/// Create VChip output
+#[derive(Debug, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct VChipOutput {
+    pub vchip_id: u32,
+    pub pcie_bus: u32,
+    pub pcie_chip: u32,
+    pub pcie_func: u32,
+    pub vfg_id: u32,
+    pub reserved: String,
+}
+
+impl From<ffi::dcmi_create_vdev_out> for VChipOutput {
+    fn from(vchip_out: ffi::dcmi_create_vdev_out) -> Self {
+        VChipOutput {
+            vchip_id: vchip_out.vdev_id,
+            pcie_bus: vchip_out.pcie_bus,
+            pcie_chip: vchip_out.pcie_device,
+            pcie_func: vchip_out.pcie_func,
+            vfg_id: vchip_out.vfg_id,
+            reserved: vchip_out
+                .reserved
+                .iter()
+                .map(|&byte| byte as char)
+                .collect(),
         }
     }
 }

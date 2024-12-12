@@ -1,14 +1,13 @@
-#[warn(missing_docs)]
-
-use hw_dcmi_sys::bindings as ffi;
-use static_assertions::assert_impl_all;
 use crate::device::Card;
 use crate::enums::HealthState;
 use crate::error::{dcmi_try, DCMIResult};
+#[warn(missing_docs)]
+use hw_dcmi_sys::bindings as ffi;
+use static_assertions::assert_impl_all;
 
-pub mod error;
-pub mod enums;
 pub mod device;
+pub mod enums;
+pub mod error;
 pub mod structs;
 #[cfg(test)]
 mod test;
@@ -50,29 +49,31 @@ macro_rules! call_dcmi_function {
 
 impl DCMI {
     /// Initialize the DCMI
-    /// 
+    ///
     /// As documented in the reference manual, the DCMI must be initialized before use.
     pub fn init() -> DCMIResult<Self> {
         #[cfg(feature = "load_dynamic")]
         let lib = {
-            let hw_dcmi_path = std::env::var("HW_DCMI_PATH")
-                .unwrap_or_else(|_| "/usr/local/dcmi".to_string());
+            let hw_dcmi_path =
+                std::env::var("HW_DCMI_PATH").unwrap_or_else(|_| "/usr/local/dcmi".to_string());
             let lib_path = format!("{}/libdcmi.so", hw_dcmi_path);
-            unsafe {
-                ffi::dcmi::new(lib_path)
-            }.expect("Failed to load DCMI library dynamically")
+            unsafe { ffi::dcmi::new(lib_path) }.expect("Failed to load DCMI library dynamically")
         };
-        
+
         let res = unsafe {
             #[cfg(feature = "load_dynamic")]
-            { lib.dcmi_init() }
-            
+            {
+                lib.dcmi_init()
+            }
+
             #[cfg(not(feature = "load_dynamic"))]
-            { ffi::dcmi_init() }
+            {
+                ffi::dcmi_init()
+            }
         };
-        
+
         dcmi_try(res)?;
-        
+
         let dcmi = DCMI {
             #[cfg(feature = "load_dynamic")]
             lib: lib,
@@ -81,7 +82,7 @@ impl DCMI {
     }
 
     /// Get the DCMI version
-    /// 
+    ///
     /// # Returns
     /// DCMI version
     pub fn get_dcmi_version(&self) -> DCMIResult<String> {
@@ -89,30 +90,40 @@ impl DCMI {
         let len = dcmi_ver.len() as u32;
 
         // 调用 C 函数
-        call_dcmi_function!(dcmi_get_dcmi_version, self.lib, dcmi_ver.as_mut_ptr() as *mut ::std::os::raw::c_char, len);
-        
+        call_dcmi_function!(
+            dcmi_get_dcmi_version,
+            self.lib,
+            dcmi_ver.as_mut_ptr() as *mut ::std::os::raw::c_char,
+            len
+        );
+
         Ok(std::str::from_utf8(&dcmi_ver)?.into())
     }
-    
+
     /// Get the driver version
-    /// 
+    ///
     /// # Returns
     /// driver version
     pub fn get_driver_version(&self) -> DCMIResult<String> {
         let mut driver_ver = [0u8; 64];
         let len = driver_ver.len() as u32;
-        
-        call_dcmi_function!(dcmi_get_driver_version, self.lib, driver_ver.as_mut_ptr() as *mut ::std::os::raw::c_char, len);
-        
+
+        call_dcmi_function!(
+            dcmi_get_driver_version,
+            self.lib,
+            driver_ver.as_mut_ptr() as *mut ::std::os::raw::c_char,
+            len
+        );
+
         Ok(std::str::from_utf8(&driver_ver)?.into())
     }
-    
+
     /// Query target device driver version
-    /// 
+    ///
     /// # Parameters
     /// - card_id: Specify the NPU management unit ID, and obtain the currently supported IDs through the `get_card_list`
     /// - device_id: Specify the device ID, and obtain the supported IDs through the `get_device_id_in_card`
-    /// 
+    ///
     /// # Returns
     /// driver version
     #[deprecated = "As mentioned in Huawei document, this function will delete later, Use get_driver_version instead"]
@@ -122,19 +133,26 @@ impl DCMI {
         let mut ver_len = 0i32;
 
         call_dcmi_function!(
-            dcmi_get_version, self.lib, 
+            dcmi_get_version,
+            self.lib,
             card_id as std::os::raw::c_int,
             chip_id as std::os::raw::c_int,
-            driver_ver.as_mut_ptr() as *mut ::std::os::raw::c_char, 
+            driver_ver.as_mut_ptr() as *mut ::std::os::raw::c_char,
             len,
             &mut ver_len
         );
 
-        Ok(std::str::from_utf8(&driver_ver.into_iter().take(ver_len as usize).collect::<Vec<_>>())?.into())
+        Ok(std::str::from_utf8(
+            &driver_ver
+                .into_iter()
+                .take(ver_len as usize)
+                .collect::<Vec<_>>(),
+        )?
+        .into())
     }
-    
+
     /// Query the number of NPU units and the id of each NPU unit
-    /// 
+    ///
     /// # Returns
     /// NPU management unit ID list
     pub fn get_card_list(&self) -> DCMIResult<Vec<Card>> {
@@ -142,32 +160,95 @@ impl DCMI {
         let mut card_list = [-1i32; 64];
         let len = card_list.len() as i32;
 
-        call_dcmi_function!(dcmi_get_card_list, self.lib, &mut card_num, card_list.as_mut_ptr(), len);
+        call_dcmi_function!(
+            dcmi_get_card_list,
+            self.lib,
+            &mut card_num,
+            card_list.as_mut_ptr(),
+            len
+        );
 
-        Ok(card_list.into_iter().take(card_num as usize).map(|id| Card{dcmi: &self, id: id as u32}).collect())
+        Ok(card_list
+            .into_iter()
+            .take(card_num as usize)
+            .map(|id| Card {
+                dcmi: &self,
+                id: id as u32,
+            })
+            .collect())
     }
-    
+
     /// Query the driver health
-    /// 
+    ///
     /// # Returns
     /// driver health
     pub fn get_driver_health(&self) -> DCMIResult<HealthState> {
         let mut health = 0u32;
         call_dcmi_function!(dcmi_get_driver_health, self.lib, &mut health);
-        
+
         Ok(health.into())
     }
-    
+
     /// Query the driver error code
-    /// 
+    ///
     /// # Returns
     /// driver error code list
     pub fn get_driver_error_code(&self) -> DCMIResult<Vec<u32>> {
         let mut error_code_list = [0u32, 128];
         let mut error_count = 0i32;
-        
-        call_dcmi_function!(dcmi_get_driver_errorcode, self.lib, &mut error_count, error_code_list.as_mut_ptr(), 128);
-        
-        Ok(error_code_list.into_iter().take(error_count as usize).collect())
+
+        call_dcmi_function!(
+            dcmi_get_driver_errorcode,
+            self.lib,
+            &mut error_count,
+            error_code_list.as_mut_ptr(),
+            128
+        );
+
+        Ok(error_code_list
+            .into_iter()
+            .take(error_count as usize)
+            .collect())
+    }
+
+    /// Set the computing power splitting mode
+    ///
+    /// # Parameters
+    /// - mode: computing power splitting mode
+    ///
+    /// # Note
+    /// make sure that no vchip is created before calling this function
+    pub fn set_vchip_mode(&self, mode: i32) -> DCMIResult<i32> {
+        call_dcmi_function!(dcmi_set_vdevice_mode, self.lib, mode);
+        Ok(mode)
+    }
+
+    /// Query the computing power splitting mode
+    ///
+    /// # Returns
+    /// computing power splitting mode
+    pub fn get_vchip_mode(&self) -> DCMIResult<i32> {
+        let mut mode = 0i32;
+        call_dcmi_function!(dcmi_get_vdevice_mode, self.lib, &mut mode);
+        Ok(mode)
+    }
+
+    /// Set the vchip configuration recover mode
+    ///
+    /// # Parameters
+    /// - mode: vchip configuration recover mode (0: disable, 1: enable)
+    pub fn set_vchip_recover_mode(&self, mode: u32) -> DCMIResult<()> {
+        call_dcmi_function!(dcmi_set_vnpu_config_recover_mode, self.lib, mode);
+        Ok(())
+    }
+
+    /// Query the vchip configuration recover mode
+    ///
+    /// # Returns
+    /// vchip configuration recover mode (0: disable, 1: enable)
+    pub fn get_vchip_recover_mode(&self) -> DCMIResult<u32> {
+        let mut mode = 0u32;
+        call_dcmi_function!(dcmi_get_vnpu_config_recover_mode, self.lib, &mut mode);
+        Ok(mode)
     }
 }

@@ -82,7 +82,9 @@ impl From<ffi::dcmi_device_type> for DeviceType {
             ffi::dcmi_device_type_DCMI_DEVICE_TYPE_SRAM => DeviceType::SRAM,
             ffi::dcmi_device_type_DCMI_DEVICE_TYPE_HBM => DeviceType::HBM,
             ffi::dcmi_device_type_DCMI_DEVICE_TYPE_NPU => DeviceType::NPU,
-            ffi::dcmi_device_type_DCMI_HBM_RECORDED_SINGLE_ADDR => DeviceType::HBMRecordedSingleAddr,
+            ffi::dcmi_device_type_DCMI_HBM_RECORDED_SINGLE_ADDR => {
+                DeviceType::HBMRecordedSingleAddr
+            }
             ffi::dcmi_device_type_DCMI_HBM_RECORDED_MULTI_ADDR => DeviceType::HBMRecordedMultiAddr,
             ffi::dcmi_device_type_DCMI_DEVICE_TYPE_NONE => DeviceType::None,
             _ => unreachable!("Not mentioned in the reference manual"),
@@ -97,7 +99,9 @@ impl From<DeviceType> for ffi::dcmi_device_type {
             DeviceType::SRAM => ffi::dcmi_device_type_DCMI_DEVICE_TYPE_SRAM,
             DeviceType::HBM => ffi::dcmi_device_type_DCMI_DEVICE_TYPE_HBM,
             DeviceType::NPU => ffi::dcmi_device_type_DCMI_DEVICE_TYPE_NPU,
-            DeviceType::HBMRecordedSingleAddr => ffi::dcmi_device_type_DCMI_HBM_RECORDED_SINGLE_ADDR,
+            DeviceType::HBMRecordedSingleAddr => {
+                ffi::dcmi_device_type_DCMI_HBM_RECORDED_SINGLE_ADDR
+            }
             DeviceType::HBMRecordedMultiAddr => ffi::dcmi_device_type_DCMI_HBM_RECORDED_MULTI_ADDR,
             DeviceType::None => ffi::dcmi_device_type_DCMI_DEVICE_TYPE_NONE,
         }
@@ -179,6 +183,8 @@ impl From<FrequencyType> for ffi::dcmi_freq_type {
 }
 
 /// Utilization type
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum UtilizationType {
     /// Memory
     Memory,
@@ -213,6 +219,22 @@ impl From<i32> for UtilizationType {
             10 => UtilizationType::HbmBandwidth,
             12 => UtilizationType::VectorCore,
             _ => unreachable!("Not mentioned in the reference manual"),
+        }
+    }
+}
+
+impl Into<i32> for UtilizationType {
+    fn into(self) -> i32 {
+        match self {
+            UtilizationType::Memory => 1,
+            UtilizationType::AICore => 2,
+            UtilizationType::AICpu => 3,
+            UtilizationType::CtrlCpu => 4,
+            UtilizationType::MemoryBandwidth => 5,
+            UtilizationType::HBM => 6,
+            UtilizationType::DDR => 8,
+            UtilizationType::HbmBandwidth => 10,
+            UtilizationType::VectorCore => 12,
         }
     }
 }
