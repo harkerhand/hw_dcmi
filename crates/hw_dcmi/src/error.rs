@@ -1,22 +1,30 @@
+//! Error types for DCMI functions.
+
 use std::ffi::c_int;
 use thiserror::Error;
 
+/// Error type for DCMI function which gets data.
 #[derive(Error, Debug)]
 pub enum GetDataError {
+    /// Invalid data
     #[error("Invalid data")]
     InvalidData,
+    /// Error when reading data
     #[error("Data read error")]
     ReadError,
 }
 
+/// Error type for DCMI functions.
 #[derive(Error, Debug)]
 pub enum DCMIError {
+    /// Error when parsing c char array return by DCMI
     #[error(transparent)]
     Utf8Error(#[from] std::str::Utf8Error),
 
+    /// Error when getting data from DCMI c library
     #[error(transparent)]
     GetDataError(#[from] GetDataError),
-    
+
     /// Invalid parameter
     #[error("Invalid parameter")]
     InvalidParameter,
@@ -88,18 +96,19 @@ pub enum DCMIError {
     /// Device id / function not support
     #[error("Device id / function not support")]
     NotSupport,
-    
+
     /// Unknown error
     #[error("Unknown error, error code: {0}")]
     UnknownError(i32),
 }
 
+/// Result type for DCMI functions.
 pub type DCMIResult<T> = Result<T, DCMIError>;
 
 /// Converts DCMI error code into a `Result<(), DCMIError>`.
 pub fn dcmi_try(code: c_int) -> Result<(), DCMIError> {
     use super::ffi;
-    
+
     match code {
         0 => Ok(()),
         ffi::DCMI_ERR_CODE_INVALID_PARAMETER => Err(DCMIError::InvalidParameter),
@@ -122,15 +131,4 @@ pub fn dcmi_try(code: c_int) -> Result<(), DCMIError> {
         ffi::DCMI_ERR_CODE_NOT_SUPPORT => Err(DCMIError::NotSupport),
         _ => Err(DCMIError::UnknownError(code.into())),
     }
-}
-
-#[macro_export]
-macro_rules! check_value {
-    ($value:expr) => {
-        match $value {
-            0x7ffd => Err(GetDataError::InvalidData),
-            0x7fff => Err(GetDataError::ReadError),
-            _ => Ok($value),
-        }
-    };
 }

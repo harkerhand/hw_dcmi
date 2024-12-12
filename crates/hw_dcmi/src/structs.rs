@@ -1,8 +1,8 @@
 //! Wrapped structs for the DCMI peripheral
 
-use std::ffi::CStr;
 #[cfg(feature = "serde")]
 use serde_derive::{Deserialize, Serialize};
+use std::ffi::CStr;
 
 use hw_dcmi_sys::bindings as ffi;
 
@@ -17,16 +17,28 @@ pub struct ChipInfo {
     /// Chip version
     pub chip_version: String,
     /// Chip AI core count, for MCU and CPU, this field makes no sense
-    pub ai_core_count: u32
+    pub ai_core_count: u32,
 }
 
 impl From<ffi::dcmi_chip_info> for ChipInfo {
     fn from(chip_info: ffi::dcmi_chip_info) -> Self {
         ChipInfo {
-            chip_type: CStr::from_bytes_until_nul(&chip_info.chip_type).unwrap().to_str().unwrap().into(),
-            chip_name: CStr::from_bytes_until_nul(&chip_info.chip_name).unwrap().to_str().unwrap().into(),
-            chip_version: CStr::from_bytes_until_nul(&chip_info.chip_ver).unwrap().to_str().unwrap().into(),
-            ai_core_count: chip_info.aicore_cnt as u32
+            chip_type: CStr::from_bytes_until_nul(&chip_info.chip_type)
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .into(),
+            chip_name: CStr::from_bytes_until_nul(&chip_info.chip_name)
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .into(),
+            chip_version: CStr::from_bytes_until_nul(&chip_info.chip_ver)
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .into(),
+            ai_core_count: chip_info.aicore_cnt as u32,
         }
     }
 }
@@ -73,10 +85,11 @@ impl_from_pcie_info!(ffi::dcmi_pcie_info, PCIEInfo);
 impl_from_pcie_info!(ffi::dcmi_pcie_info_all, PCIEInfo);
 
 /// PCIE information with domain
+#[non_exhaustive]
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[non_exhaustive]
 pub struct DomainPCIEInfo {
+    /// PCIE information
     pub pcie_info: PCIEInfo,
     /// Domain
     pub domain: i32,
@@ -92,10 +105,10 @@ impl From<ffi::dcmi_pcie_info_all> for DomainPCIEInfo {
 }
 
 /// Board information
-/// 
+///
 /// # Notes
 /// when chip is NPU, only board_id and slot_id is valid, slot_id tagged the pcie slot where chip is located
-/// 
+///
 /// when chip is MCU, all fields are valid, slot_id tagged the position of card where chip is located
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -139,27 +152,49 @@ pub struct ELabelInfo {
 impl From<ffi::dcmi_elabel_info> for ELabelInfo {
     fn from(elabel_info: ffi::dcmi_elabel_info) -> Self {
         ELabelInfo {
-            product_name: CStr::from_bytes_until_nul(&elabel_info.product_name.map(|x| x as u8)).unwrap().to_str().unwrap().into(),
-            model: CStr::from_bytes_until_nul(&elabel_info.model.map(|x| x as u8)).unwrap().to_str().unwrap().into(),
-            manufacturer: CStr::from_bytes_until_nul(&elabel_info.manufacturer.map(|x| x as u8)).unwrap().to_str().unwrap().into(),
-            serial_number: CStr::from_bytes_until_nul(&elabel_info.serial_number.map(|x| x as u8)).unwrap().to_str().unwrap().into(),
+            product_name: CStr::from_bytes_until_nul(&elabel_info.product_name.map(|x| x as u8))
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .into(),
+            model: CStr::from_bytes_until_nul(&elabel_info.model.map(|x| x as u8))
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .into(),
+            manufacturer: CStr::from_bytes_until_nul(&elabel_info.manufacturer.map(|x| x as u8))
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .into(),
+            serial_number: CStr::from_bytes_until_nul(&elabel_info.serial_number.map(|x| x as u8))
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .into(),
         }
     }
 }
 
 /// Die ID
+#[derive(Debug, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DieInfo {
-    pub soc_die: [u32; ffi::DIE_ID_COUNT as usize]
+    /// SOC die
+    pub soc_die: [u32; ffi::DIE_ID_COUNT as usize],
 }
 
 impl From<ffi::dcmi_die_id> for DieInfo {
     fn from(die_id: ffi::dcmi_die_id) -> Self {
         DieInfo {
-            soc_die: die_id.soc_die
+            soc_die: die_id.soc_die,
         }
     }
 }
 
+/// Flash information
+#[derive(Debug, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct FlashInfo {
     /// Flash ID
     pub flash_id: u64,
@@ -192,6 +227,8 @@ impl From<ffi::dcmi_flash_info> for FlashInfo {
 }
 
 /// AI core information
+#[derive(Debug, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AICoreInfo {
     /// Frequency, unit: MHz
     pub frequency: u32,
@@ -209,6 +246,8 @@ impl From<ffi::dcmi_aicore_info> for AICoreInfo {
 }
 
 /// AI CPU information
+#[derive(Debug, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AICPUInfo {
     /// Maximum frequency, unit: MHz
     pub max_frequency: u32,
@@ -326,16 +365,25 @@ pub struct ChipPCIEErrorRate {
 impl From<ffi::dcmi_chip_pcie_err_rate> for ChipPCIEErrorRate {
     fn from(chip_pcie_err_rate: ffi::dcmi_chip_pcie_err_rate) -> Self {
         ChipPCIEErrorRate {
-            deskew_fifo_overflow_intr_status: chip_pcie_err_rate.reg_deskew_fifo_overflow_intr_status != 0,
+            deskew_fifo_overflow_intr_status: chip_pcie_err_rate
+                .reg_deskew_fifo_overflow_intr_status
+                != 0,
             symbol_unlock_intr_status: chip_pcie_err_rate.reg_symbol_unlock_intr_status != 0,
             deskew_unlock_intr_status: chip_pcie_err_rate.reg_deskew_unlock_intr_status != 0,
-            phystatus_timeout_intr_status: chip_pcie_err_rate.reg_phystatus_timeout_intr_status != 0,
+            phystatus_timeout_intr_status: chip_pcie_err_rate.reg_phystatus_timeout_intr_status
+                != 0,
             symbol_unlock_counter: chip_pcie_err_rate.symbol_unlock_counter,
             pcs_rx_err_cnt: chip_pcie_err_rate.pcs_rx_err_cnt,
             phy_lane_err_counter: chip_pcie_err_rate.phy_lane_err_counter,
-            pcs_rcv_err_status: (0..32usize).map(|i| chip_pcie_err_rate.pcs_rcv_err_status & (1 << i) != 0).collect(),
-            symbol_unlock_err_status: (0..32usize).map(|i| chip_pcie_err_rate.symbol_unlock_err_status & (1 << i) != 0).collect(),
-            phy_lane_err_status: (0..32usize).map(|i| chip_pcie_err_rate.phy_lane_err_status & (1 << i) != 0).collect(),
+            pcs_rcv_err_status: (0..32usize)
+                .map(|i| chip_pcie_err_rate.pcs_rcv_err_status & (1 << i) != 0)
+                .collect(),
+            symbol_unlock_err_status: (0..32usize)
+                .map(|i| chip_pcie_err_rate.symbol_unlock_err_status & (1 << i) != 0)
+                .collect(),
+            phy_lane_err_status: (0..32usize)
+                .map(|i| chip_pcie_err_rate.phy_lane_err_status & (1 << i) != 0)
+                .collect(),
             dl_lcrc_err_num: chip_pcie_err_rate.dl_lcrc_err_num,
             dl_dcrc_err_num: chip_pcie_err_rate.dl_dcrc_err_num,
         }
