@@ -30,6 +30,7 @@ use static_assertions::assert_impl_all;
 
 #[macro_use]
 mod macros;
+
 pub mod device;
 pub mod enums;
 pub mod error;
@@ -231,5 +232,46 @@ impl DCMI {
             .into_iter()
             .take(error_count as usize)
             .collect())
+    }
+
+    /// Set the computing power splitting mode
+    ///
+    /// # Parameters
+    /// - mode: computing power splitting mode
+    ///
+    /// # Note
+    /// make sure that no vchip is created before calling this function
+    pub fn set_vchip_mode(&self, mode: i32) -> DCMIResult<i32> {
+        call_dcmi_function!(dcmi_set_vdevice_mode, self.lib, mode);
+        Ok(mode)
+    }
+
+    /// Query the computing power splitting mode
+    ///
+    /// # Returns
+    /// computing power splitting mode
+    pub fn get_vchip_mode(&self) -> DCMIResult<i32> {
+        let mut mode = 0i32;
+        call_dcmi_function!(dcmi_get_vdevice_mode, self.lib, &mut mode);
+        Ok(mode)
+    }
+
+    /// Set the vchip configuration recover mode
+    ///
+    /// # Parameters
+    /// - mode: vchip configuration recover mode (0: disable, 1: enable)
+    pub fn set_vchip_recover_mode(&self, mode: u32) -> DCMIResult<()> {
+        call_dcmi_function!(dcmi_set_vnpu_config_recover_mode, self.lib, mode);
+        Ok(())
+    }
+
+    /// Query the vchip configuration recover mode
+    ///
+    /// # Returns
+    /// vchip configuration recover mode (0: disable, 1: enable)
+    pub fn get_vchip_recover_mode(&self) -> DCMIResult<u32> {
+        let mut mode = 0u32;
+        call_dcmi_function!(dcmi_get_vnpu_config_recover_mode, self.lib, &mut mode);
+        Ok(mode)
     }
 }

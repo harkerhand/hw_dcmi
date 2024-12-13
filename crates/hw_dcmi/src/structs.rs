@@ -423,3 +423,64 @@ impl From<ffi::dcmi_ecc_info> for ECCInfo {
         }
     }
 }
+
+/// VChip resource
+#[derive(Debug, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct VChipRes {
+    pub vchip_id: u32,
+    pub vfg_id: u32,
+    pub template_name: String,
+    pub reserved: String,
+}
+
+impl From<&VChipRes> for ffi::dcmi_create_vdev_res_stru {
+    fn from(vchip_res: &VChipRes) -> Self {
+        let mut template_name = [0 as std::os::raw::c_char; 32];
+        let mut reserved = [0 as std::os::raw::c_uchar; 64];
+        let template_bytes = vchip_res.template_name.as_bytes();
+        for (i, &byte) in template_bytes.iter().take(32).enumerate() {
+            template_name[i] = byte as std::os::raw::c_char;
+        }
+        let reserved_bytes = vchip_res.reserved.as_bytes();
+        for (i, &byte) in reserved_bytes.iter().take(64).enumerate() {
+            reserved[i] = byte as std::os::raw::c_uchar;
+        }
+
+        ffi::dcmi_create_vdev_res_stru {
+            vdev_id: vchip_res.vchip_id,
+            vfg_id: vchip_res.vfg_id,
+            template_name,
+            reserved,
+        }
+    }
+}
+
+/// Create VChip output
+#[derive(Debug, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct VChipOutput {
+    pub vchip_id: u32,
+    pub pcie_bus: u32,
+    pub pcie_chip: u32,
+    pub pcie_func: u32,
+    pub vfg_id: u32,
+    pub reserved: String,
+}
+
+impl From<ffi::dcmi_create_vdev_out> for VChipOutput {
+    fn from(vchip_out: ffi::dcmi_create_vdev_out) -> Self {
+        VChipOutput {
+            vchip_id: vchip_out.vdev_id,
+            pcie_bus: vchip_out.pcie_bus,
+            pcie_chip: vchip_out.pcie_device,
+            pcie_func: vchip_out.pcie_func,
+            vfg_id: vchip_out.vfg_id,
+            reserved: vchip_out
+                .reserved
+                .iter()
+                .map(|&byte| byte as char)
+                .collect(),
+        }
+    }
+}

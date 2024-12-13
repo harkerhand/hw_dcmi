@@ -4,9 +4,9 @@ use crate::enums::{DeviceType, DieType, FrequencyType, HealthState, UnitType, Ut
 use crate::error::{dcmi_try, DCMIError, DCMIResult, GetDataError};
 use crate::structs::{
     AICPUInfo, AICoreInfo, BoardInfo, ChipInfo, ChipPCIEErrorRate, DieInfo, DomainPCIEInfo,
-    ECCInfo, ELabelInfo, FlashInfo, HBMInfo, MemoryInfo, PCIEInfo,
+    ECCInfo, ELabelInfo, FlashInfo, HBMInfo, MemoryInfo, PCIEInfo, VChipOutput, VChipRes,
 };
-use crate::DCMI;
+use crate::{call_dcmi_function, check_value, DCMI};
 #[cfg(not(feature = "load_dynamic"))]
 use hw_dcmi_sys::bindings as ffi;
 #[cfg(feature = "serde")]
@@ -727,5 +727,48 @@ impl Chip<'_, '_> {
         );
 
         Ok(utilization_rate)
+    }
+
+    /// Create a virtual chip
+    ///
+    /// # Parameters
+    /// - vdev: virtual chip info
+    ///
+    /// # Returns
+    /// - out: output virtual chip info
+    pub fn create_virtual_chip(&self, vdev: &VChipRes) -> DCMIResult<VChipOutput> {
+        let mut vchip_out = unsafe { std::mem::zeroed() };
+
+        #[cfg(not(feature = "load_dynamic"))]
+        let mut vchip_res = hw_dcmi_sys::bindings::dcmi_create_vdev_res_stru::from(vdev);
+        #[cfg(feature = "load_dynamic")]
+        let mut vchip_res = hw_dcmi_sys::bindings_dyn::dcmi_create_vdev_res_stru::from(vdev);
+        call_dcmi_function!(
+            dcmi_create_vdevice,
+            self.card.dcmi.lib,
+            self.card.id as i32,
+            self.id as i32,
+            &mut vchip_res,
+            &mut vchip_out
+        );
+        Ok(vchip_out.into())
+    }
+
+    /// Destroy a virtual chip
+    ///
+    /// # Parameters
+    /// - vdevid : virtual chip id
+    ///
+    /// # Notes
+    /// when vdevid is 65535, it will destroy all virtual chips
+    pub fn destroy_virtual_chip(&self, vdevid: u32) -> DCMIResult<()> {
+        call_dcmi_function!(
+            dcmi_set_destroy_vdevice,
+            self.card.dcmi.lib,
+            self.card.id as i32,
+            self.id as i32,
+            vdevid
+        );
+        Ok(())
     }
 }
